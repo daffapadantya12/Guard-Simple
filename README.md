@@ -338,25 +338,14 @@ server {
 
 ## 🛡️ Step 8: Security Best Practices
 
-### 8.1 API Key Management
-
-```bash
-# Generate secure API keys
-openssl rand -hex 32
-
-# Set environment variables
-export API_KEY="your-secure-production-key"
-export REACT_APP_API_KEY="your-secure-production-key"
-```
-
-### 8.2 CORS Configuration
+### 8.1 CORS Configuration
 
 ```bash
 # Restrict CORS origins in production
 CORS_ORIGINS=["https://your-domain.com"]
 ```
 
-### 8.3 Rate Limiting
+### 8.2 Rate Limiting
 
 The system includes built-in rate limiting. Configure in `config.py`:
 
