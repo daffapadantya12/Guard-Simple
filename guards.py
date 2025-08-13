@@ -172,7 +172,7 @@ class LlamaGuard8B(BaseGuard):
                 return
                 
             # Use configurable model name from environment
-            model_name = "meta-llama/LlamaGuard-7b"
+            model_name = os.getenv('MODEL_NAME', 'unitary/toxic-bert')
             logger.info(f"Loading LLaMA Guard model: {model_name}")
             
             # Get timeout from environment (default 30 minutes)
