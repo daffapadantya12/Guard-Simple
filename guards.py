@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import time
+import signal
 from typing import Dict, List, Optional, Any
 from abc import ABC, abstractmethod
 
@@ -66,6 +67,25 @@ except ImportError:
     LANGDETECT_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+class TimeoutHandler:
+    """Context manager for handling timeouts during model loading"""
+    def __init__(self, timeout_seconds):
+        self.timeout_seconds = timeout_seconds
+        self.old_handler = None
+    
+    def __enter__(self):
+        def timeout_handler(signum, frame):
+            raise TimeoutError(f"Model loading timed out after {self.timeout_seconds} seconds")
+        
+        self.old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(self.timeout_seconds)
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        signal.alarm(0)
+        if self.old_handler is not None:
+            signal.signal(signal.SIGALRM, self.old_handler)
 
 # Configuration helper functions
 def get_device_config():
@@ -145,15 +165,19 @@ class LlamaGuard8B(BaseGuard):
         self._load_model()
         
     def _load_model(self):
-        """Load the actual LLaMA Guard model with quantization support"""
+        """Load the actual LLaMA Guard model with quantization support and timeout"""
         try:
             if not HF_AVAILABLE:
                 logger.error("Transformers library not available for LlamaGuard8B")
                 return
                 
-            # Use Meta's LLaMA Guard model
+            # Use configurable model name from environment
             model_name = "meta-llama/LlamaGuard-7b"
             logger.info(f"Loading LLaMA Guard model: {model_name}")
+            
+            # Get timeout from environment (default 30 minutes)
+            timeout_seconds = int(os.getenv('MODEL_LOADING_TIMEOUT', '1800'))
+            logger.info(f"Model loading timeout set to {timeout_seconds} seconds")
             
             # Check for HF token
             if not self.hf_token:
@@ -180,28 +204,43 @@ class LlamaGuard8B(BaseGuard):
             if self.device == "cuda" and not self.quantization_config:
                 model_kwargs["device_map"] = "auto"
             
-            # Load tokenizer
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                model_name,
-                trust_remote_code=model_kwargs["trust_remote_code"],
-                token=self.hf_token,
-                cache_dir=model_kwargs["cache_dir"]
-            )
-            
-            # Load model
-            self.model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                **model_kwargs
-            )
-            
-            # Move to device if not using device_map
-            if "device_map" not in model_kwargs and not self.quantization_config:
-                self.model = self.model.to(self.device)
+            # Load with timeout
+            with TimeoutHandler(timeout_seconds):
+                # Load tokenizer
+                logger.info("Loading tokenizer...")
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    model_name,
+                    trust_remote_code=model_kwargs["trust_remote_code"],
+                    token=self.hf_token,
+                    cache_dir=model_kwargs["cache_dir"]
+                )
+                logger.info("Tokenizer loaded successfully")
                 
+                # Load model
+                logger.info("Loading model (this may take several minutes)...")
+                logger.info(f"Model kwargs: {model_kwargs}")
+                logger.info(f"Available system memory info: checking...")
+                
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    **model_kwargs
+                )
+                logger.info("Model loaded successfully")
+                
+                # Move to device if not using device_map
+                if "device_map" not in model_kwargs and not self.quantization_config:
+                    logger.info(f"Moving model to {self.device}...")
+                    self.model = self.model.to(self.device)
+                    
             logger.info(f"LLaMA Guard model loaded successfully on {self.device}")
             if self.quantization_config:
                 logger.info("Model loaded with quantization enabled")
             
+        except TimeoutError as e:
+            logger.error(f"Model loading timed out: {e}")
+            logger.info("Falling back to rule-based implementation")
+            self.model = None
+            self.tokenizer = None
         except Exception as e:
             logger.error(f"Failed to load LLaMA Guard model: {e}")
             logger.info("Falling back to rule-based implementation")

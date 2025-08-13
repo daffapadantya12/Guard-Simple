@@ -12,8 +12,8 @@ This guide explains how to deploy the Guard API system using Docker in a product
 
 ### 1. Clone and Setup
 ```bash
-git clone <your-repo>
-cd GUARD-SIMPLE
+git clone https://github.com/daffapadantya12/Guard-Simple.git
+cd Guard-Simple
 ```
 
 ### 2. Configure Environment
