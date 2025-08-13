@@ -1,488 +1,326 @@
-# Prompt Railguarding API - MVP
+# GUARD-SIMPLE API - Complete Step-by-Step Tutorial
 
-A comprehensive API system that screens user prompts before sending them to an LLM. Uses multiple AI safety models including LLaMA Guard 8B, LLaMA Guard 1B, IndoBERT Toxic Classifier, LLM Guard, and NeMo Guardrails to detect and block unsafe, malicious, or policy-violating input.
+A comprehensive AI-powered prompt safety system that screens user inputs before sending them to LLMs. This tutorial will guide you through installation, setup, deployment, and usage of the GUARD-SIMPLE API.
 
-## Features
+## 🎯 What You'll Build
 
-### Backend (FastAPI)
-- **Multiple Guard Integration**: LLaMA Guard 8B/1B, IndoBERT, LLM Guard, NeMo Guardrails
-- **Parallel Processing**: All guards run concurrently for optimal performance
-- **Rate Limiting**: Configurable request limits per IP
-- **Caching**: Redis-based caching for duplicate prompt detection
-- **Comprehensive Metrics**: Real-time statistics and performance monitoring
-- **Health Monitoring**: System health checks and guard status monitoring
-- **Configurable Thresholds**: Adjustable sensitivity settings per guard
+By following this tutorial, you'll deploy a production-ready prompt safety system featuring:
+- **Multiple AI Safety Guards**: LLaMA Guard 8B/1B, IndoBERT Toxic Classifier, LLM Guard, NeMo Guardrails
+- **Real-time Dashboard**: Monitor metrics, configure guards, and analyze prompts
+- **Production Deployment**: Docker containerization with optimized performance
+- **API Authentication**: Secure Bearer token authentication
+- **Advanced Analytics**: Comprehensive metrics and threat intelligence
 
-### Frontend (React)
-- **Input & Analysis Tab**: Interactive prompt testing with detailed results
-- **Dashboard Tab**: Real-time metrics, KPIs, and performance charts
-- **Settings Tab**: Guard toggles, threshold adjustments, and configuration
-- **Responsive Design**: Modern UI with Tailwind CSS
-- **Real-time Updates**: Live metrics and health status monitoring
+## 📋 Prerequisites
 
-## Tech Stack
+Before starting, ensure you have:
+- **Python 3.11+** installed
+- **Node.js 16+** installed
+- **Docker** and **Docker Compose** installed
+- **Redis server** (we'll show you how to install)
+- **Hugging Face account** (free) for model access
 
-- **Backend**: FastAPI (Python 3.11+), Redis, uvicorn/gunicorn
-- **Frontend**: React 18, Tailwind CSS, Axios, Recharts
-- **AI Models**: LLaMA Guard, IndoBERT, LLM Guard, NeMo Guardrails
-- **Caching**: Redis with fastapi-cache2
-- **Rate Limiting**: fastapi-limiter
+## 🚀 Step 1: Project Setup
 
-## Quick Start
+### 1.1 Clone the Repository
 
-### Prerequisites
-- Python 3.11+
-- Node.js 16+
-- Redis server
-
-### Backend Setup
-
-1. **Install Python dependencies**:
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/your-username/GUARD-SIMPLE.git
+cd GUARD-SIMPLE
 ```
 
-2. **Configure Environment Variables**:
+### 1.2 Install System Dependencies
 
-Run the interactive setup script:
+**On macOS:**
+```bash
+# Install Redis
+brew install redis
+brew services start redis
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Install Node.js dependencies
+npm install
+```
+
+**On Ubuntu/Debian:**
+```bash
+# Install Redis
+sudo apt update
+sudo apt install redis-server
+sudo systemctl start redis-server
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Install Node.js dependencies
+npm install
+```
+
+## 🔧 Step 2: Environment Configuration
+
+### 2.1 Get Your Hugging Face Token
+
+1. Visit [Hugging Face Settings](https://huggingface.co/settings/tokens)
+2. Create a new token with "Read" permissions
+3. Request access to LLaMA Guard models (optional but recommended)
+
+### 2.2 Configure Environment Variables
+
+**Option A: Interactive Setup (Recommended)**
 ```bash
 python setup_env.py
 ```
 
-Or manually create a `.env` file:
+**Option B: Manual Setup**
+Create a `.env` file in the project root:
+
 ```bash
+# Core Configuration
+API_KEY=guard-api-key-2024
+REACT_APP_API_KEY=guard-api-key-2024
+
 # Hugging Face Configuration
 HUGGINGFACE_TOKEN=your_token_here
 
 # Device Configuration (auto/cuda/cpu)
 DEVICE=auto
 
-# Model Quantization (reduces memory usage)
+# Model Optimization (Recommended for production)
 USE_QUANTIZATION=true
 QUANTIZATION_BITS=4
 QUANTIZATION_TYPE=nf4
 USE_DOUBLE_QUANT=true
 COMPUTE_DTYPE=float16
-
-# Model Loading Configuration
-TRUST_REMOTE_CODE=true
 TORCH_DTYPE=float16
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+
+# Model Cache Directory
 HF_CACHE_DIR=./models_cache
+
+# Security
+CORS_ORIGINS=["http://localhost:3000"]
+LOG_LEVEL=INFO
 ```
 
-**Important**: Get your Hugging Face token from [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) and request access to LLaMA Guard models.
+## 🏃‍♂️ Step 3: Development Setup
 
-3. **Start Redis server**:
+### 3.1 Start the Backend API
+
 ```bash
-# macOS with Homebrew
-brew services start redis
-
-# Or run directly
-redis-server
-```
-
-3. **Start the FastAPI server**:
-```bash
-# Development
+# Start the FastAPI server
 python main.py
-# or
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-
-# Production
-gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 ```
 
-### Frontend Setup
+The API will be available at:
+- **API**: http://localhost:8000
+- **Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/healthz
 
-1. **Install Node.js dependencies**:
-```bash
-npm install
-```
+### 3.2 Start the Frontend (New Terminal)
 
-2. **Start the React development server**:
 ```bash
+# In a new terminal window
 npm start
 ```
 
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
+The frontend will be available at:
+- **Web Interface**: http://localhost:3000
 
-## Model Configuration
+### 3.3 Verify Installation
 
-### Environment Variables
+1. **Check API Health**:
+   ```bash
+   curl http://localhost:8000/healthz
+   ```
 
-The system supports extensive configuration through environment variables:
+2. **Test Authentication**:
+   ```bash
+   curl -H "Authorization: Bearer guard-api-key-2024" \
+        http://localhost:8000/config
+   ```
 
-| Variable | Options | Description |
-|----------|---------|-------------|
-| `HUGGINGFACE_TOKEN` | string | Your HF token for accessing gated models |
-| `DEVICE` | `auto`, `cuda`, `cpu` | Compute device selection |
-| `USE_QUANTIZATION` | `true`, `false` | Enable model quantization |
-| `QUANTIZATION_BITS` | `4`, `8` | Quantization precision |
-| `QUANTIZATION_TYPE` | `nf4`, `fp4` | Quantization algorithm |
-| `USE_DOUBLE_QUANT` | `true`, `false` | Double quantization for better compression |
-| `COMPUTE_DTYPE` | `float16`, `float32` | Computation data type |
-| `TORCH_DTYPE` | `float16`, `float32` | Model weights data type |
-| `HF_CACHE_DIR` | path | Directory for cached models |
+3. **Test Prompt Analysis**:
+   ```bash
+   curl -X POST "http://localhost:8000/analyze" \
+        -H "Authorization: Bearer guard-api-key-2024" \
+        -H "Content-Type: application/json" \
+        -d '{"prompt": "Hello, how are you?"}'
+   ```
 
-### Quantization Benefits
+## 🐳 Step 4: Docker Deployment
 
-**4-bit Quantization** (Recommended):
-- 🔥 **75% memory reduction** (16GB → 4GB for 7B models)
-- ⚡ **2-3x faster inference** on compatible hardware
-- 📊 **Minimal quality loss** (<2% accuracy drop)
-- 💰 **Cost effective** for production deployment
-
-**8-bit Quantization**:
-- 🔥 **50% memory reduction** (16GB → 8GB for 7B models)
-- ⚡ **1.5-2x faster inference**
-- 📊 **Higher quality** (<1% accuracy drop)
-- ⚖️ **Balanced** memory/quality trade-off
-
-### Model Loading Behavior
-
-1. **LlamaGuard8B**: Attempts to load `meta-llama/LlamaGuard-7b`
-   - Requires HF authentication and model access approval
-   - Falls back to rule-based classification if loading fails
-   - Supports quantization for memory efficiency
-
-2. **LlamaGuard1B**: Uses `unitary/toxic-bert` as alternative
-   - Publicly available, no authentication required
-   - Smaller model, faster inference
-   - Good baseline safety classification
-
-3. **IndoBERTToxic**: Indonesian language toxicity detection
-   - Specialized for Indonesian content
-   - Uses `unitary/toxic-bert` with language detection
-
-### Hardware Requirements
-
-| Configuration | GPU Memory | CPU RAM | Performance |
-|---------------|------------|---------|-------------|
-| **No Quantization** | 16GB+ | 32GB+ | Highest quality |
-| **8-bit Quantization** | 8GB+ | 16GB+ | Balanced |
-| **4-bit Quantization** | 4GB+ | 8GB+ | Most efficient |
-| **CPU Only** | N/A | 16GB+ | Slower but works |
-
-## API Endpoints
-
-### Authentication
-All API endpoints (except `/healthz`) require API key authentication using Bearer token:
+### 4.1 Build Production Docker Image
 
 ```bash
-# Set your API key
-export API_KEY="your_api_key_here"
-
-# Include in requests
-curl -H "Authorization: Bearer $API_KEY" http://localhost:8000/config
+# Build the production image
+docker build -f Dockerfile.production -t tupaikapitalis/guard-api:latest .
 ```
 
-### Public Endpoints
+### 4.2 Deploy with Docker Compose
 
-#### GET /healthz
-Health check endpoint (no authentication required).
+```bash
+# Deploy the application
+docker-compose -f docker-compose.production.yml up -d
+```
 
-### Protected Endpoints
+### 4.3 Verify Docker Deployment
 
-#### POST /analyze
-Analyze a prompt through all enabled guards. **Requires API key authentication.**
+```bash
+# Check container status
+docker ps
 
-**Request**:
-```json
-{
-  "prompt": "Your prompt text here",
-  "user_id": "optional-user-id",
-  "lang": "auto|en|id"
+# View logs
+docker logs <container_name>
+
+# Test the deployed API
+curl http://localhost:8000/healthz
+```
+
+### 4.4 Push to Docker Hub (Optional)
+
+```bash
+# Login to Docker Hub
+docker login
+
+# Push the image
+docker push tupaikapitalis/guard-api:latest
+```
+
+## 🎛️ Step 5: Using the Web Interface
+
+### 5.1 Access the Dashboard
+
+Open http://localhost:3000 in your browser. You'll see three main tabs:
+
+### 5.2 Input & Analysis Tab
+- Enter prompts to test the safety guards
+- View detailed analysis results from each guard
+- See final verdict (Allow/Warn/Block)
+- Monitor response times and guard performance
+
+### 5.3 Dashboard Tab
+- Real-time metrics and KPIs
+- Guard performance statistics
+- System health monitoring
+- Historical data visualization
+
+### 5.4 Settings Tab
+- Toggle individual guards on/off
+- Adjust sensitivity thresholds
+- Configure system parameters
+- View guard status and health
+
+## 🔌 Step 6: API Integration
+
+### 6.1 Basic Prompt Analysis
+
+```python
+import requests
+
+api_key = "guard-api-key-2024"
+headers = {
+    "Authorization": f"Bearer {api_key}",
+    "Content-Type": "application/json"
 }
-```
 
-**Response**:
-```json
-{
-  "final": "allow|warn|block",
-  "per_guard": {
-    "llama_guard_8b": {
-      "verdict": "block",
-      "labels": ["Violence"],
-      "score": null
-    },
-    "indobert_toxic": {
-      "verdict": "warn",
-      "labels": ["toxicity"],
-      "score": 0.82
+# Analyze a prompt
+response = requests.post(
+    "http://localhost:8000/analyze",
+    headers=headers,
+    json={
+        "prompt": "Your prompt text here",
+        "user_id": "user123",
+        "lang": "auto"
     }
-  },
-  "policy": {
-    "rule": "block if any block; warn if any warn; else allow"
-  }
-}
+)
+
+result = response.json()
+print(f"Final verdict: {result['final']}")
+print(f"Guard results: {result['per_guard']}")
 ```
 
-#### GET /metrics
-Retrieve comprehensive system metrics and statistics. **Requires API key authentication.**
+### 6.2 Configuration Management
 
-#### GET /config
-Get current configuration including guard toggles and thresholds. **Requires API key authentication.**
+```python
+# Get current configuration
+config = requests.get(
+    "http://localhost:8000/config",
+    headers=headers
+).json()
 
-#### PUT /config
-Update system configuration. **Requires API key authentication.**
-
-**Request**:
-```json
-{
-  "enable_all": true,
-  "guards": {
-    "llama_guard_8b": true,
-    "indobert_toxic": false
-  },
-  "thresholds": {
-    "indobert_threshold": 0.75
-  }
-}
+# Update configuration
+requests.put(
+    "http://localhost:8000/config",
+    headers=headers,
+    json={
+        "enable_all": True,
+        "guards": {
+            "llama_guard_8b": True,
+            "indobert_toxic": False
+        },
+        "thresholds": {
+            "indobert_threshold": 0.75
+        }
+    }
+)
 ```
 
-### GET /healthz
-Health check endpoint for system monitoring.
+### 6.3 Metrics and Analytics
 
-## Guard Configuration
+```python
+# Get system metrics
+metrics = requests.get(
+    "http://localhost:8000/metrics",
+    headers=headers
+).json()
 
-### Decision Policy
-- **BLOCK**: If any enabled guard returns "block"
-- **WARN**: If any enabled guard returns "warn" (and none return "block")
-- **ALLOW**: If all enabled guards return "allow"
-
-### Guard Details
-
-1. **LLaMA Guard 8B/1B**: Advanced safety classification
-   - Categories: Violence, sexual content, hate speech, cybercrime, PII
-   - Disagreement resolution: Choose more restrictive verdict
-
-2. **IndoBERT Toxic Classifier**: Indonesian toxicity detection
-   - Score ≥ 0.95: Block
-   - Score ≥ threshold (default 0.70): Warn
-   - Configurable threshold via settings
-
-3. **LLM Guard**: Multi-validator prompt scanner
-   - Validators: PromptInjection, Toxicity, PII, URL, SensitiveData
-   - Critical severity: Block
-   - Moderate severity: Warn
-
-4. **NeMo Guardrails**: Policy-based content filtering
-   - Block: Violence, minors, cybercrime, privacy
-   - Warn: Hate speech, self-harm
-
-## Monitoring & Metrics
-
-### Key Performance Indicators
-- Total prompts processed
-- Block/warn/allow percentages
-- Average response latency
-- Cache hit rate
-- Per-guard performance statistics
-
-### Health Monitoring
-- Guard availability and error rates
-- Redis connectivity
-- System uptime and performance
-- Real-time status indicators
-
-## Security Features
-
-- **API Key Authentication**: Bearer token authentication for all protected endpoints
-- **Privacy Protection**: Prompts are hashed in logs, only redacted snippets stored
-- **Rate Limiting**: Configurable per-IP request limits
-- **CORS Protection**: Restricted to authorized origins
-- **Fail-Safe Design**: Errors default to "warn" verdict
-- **Input Validation**: Comprehensive request validation
-
-## Development
-
-### Project Structure
-```
-├── main.py              # FastAPI application
-├── guards.py            # Guard implementations
-├── config.py            # Configuration management
-├── metrics.py           # Metrics collection
-├── requirements.txt     # Python dependencies
-├── package.json         # Node.js dependencies
-├── src/
-│   ├── App.js          # Main React application
-│   ├── App.css         # Styles and animations
-│   └── index.js        # React entry point
-└── public/
-    └── index.html      # HTML template
+print(f"Total prompts: {metrics['total_prompts']}")
+print(f"Block rate: {metrics['block_percentage']}%")
+print(f"Average latency: {metrics['avg_latency']}ms")
 ```
 
-### Adding New Guards
+## ⚙️ Step 7: Advanced Configuration
 
-1. Create a new guard class inheriting from `BaseGuard`
-2. Implement the `analyze()` method
-3. Add the guard to `GuardManager`
-4. Update configuration and UI as needed
+### 7.1 Model Optimization
 
-### Customizing Thresholds
-
-Thresholds can be adjusted via:
-- API: PUT /config endpoint
-- UI: Settings tab sliders
-- Code: Update `config.py` defaults
-
-## Testing
-
-Run the test suite:
+**Memory Optimization (Recommended for production):**
 ```bash
-python test_advanced_analytics.py
-python test_api_auth.py
-python test_rate_limit.py
+# Enable 4-bit quantization for 75% memory reduction
+USE_QUANTIZATION=true
+QUANTIZATION_BITS=4
+QUANTIZATION_TYPE=nf4
 ```
 
-## Production Deployment with Gunicorn
-
-### Prerequisites
-
-Install Gunicorn:
+**Performance Optimization:**
 ```bash
+# Use CUDA if available
+DEVICE=cuda
+
+# Optimize data types
+COMPUTE_DTYPE=float16
+TORCH_DTYPE=float16
+```
+
+### 7.2 Production Deployment with Gunicorn
+
+```bash
+# Install Gunicorn
 pip install gunicorn[uvicorn]
-```
 
-### Basic Deployment
-
-For development/testing:
-```bash
-gunicorn main:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
-```
-
-### Production Deployment
-
-Use the provided configuration file for production:
-```bash
+# Start with production settings
 gunicorn main:app -c gunicorn.conf.py
 ```
 
-### Configuration Options
+### 7.3 Load Balancing with Nginx
 
-The `gunicorn.conf.py` file includes production-ready settings:
-- **Workers**: 4 worker processes for handling concurrent requests
-- **Worker Class**: `uvicorn.workers.UvicornWorker` for FastAPI compatibility
-- **Timeout**: 120 seconds to accommodate AI model loading
-- **Logging**: Structured access and error logging
-- **Security**: Request size limits and security headers
-- **Performance**: Memory optimization and worker recycling
-
-### Custom Configuration
-
-You can override settings via command line:
-```bash
-# Custom number of workers
-gunicorn main:app -c gunicorn.conf.py --workers 8
-
-# Custom bind address
-gunicorn main:app -c gunicorn.conf.py --bind 127.0.0.1:8080
-
-# Enable SSL
-gunicorn main:app -c gunicorn.conf.py --keyfile /path/to/key.pem --certfile /path/to/cert.pem
-```
-
-### Environment Variables for Production
-
-Set these environment variables before starting:
-```bash
-export API_KEY="your-secure-production-api-key"
-export REDIS_URL="redis://localhost:6379"
-export DEVICE="cuda"  # or "cpu"
-export HF_TOKEN="your-huggingface-token"
-```
-
-### Docker Deployment
-
-The included Dockerfile uses Gunicorn by default. Build and run:
-```bash
-# Build the image
-docker build -t guard-api .
-
-# Run with environment variables
-docker run -d \
-  --name guard-api \
-  -p 8000:8000 \
-  -e API_KEY="your-production-api-key" \
-  -e DEVICE="cuda" \
-  guard-api
-```
-
-Or use docker-compose:
-```bash
-docker-compose up -d
-```
-
-### Systemd Service (Linux)
-
-Create a systemd service for automatic startup:
-
-1. Create service file `/etc/systemd/system/guard-api.service`:
-```ini
-[Unit]
-Description=Guard API Service
-After=network.target
-
-[Service]
-Type=exec
-User=www-data
-Group=www-data
-WorkingDirectory=/path/to/GUARD-SIMPLE
-Environment=PATH=/path/to/venv/bin
-Environment=API_KEY=your-production-api-key
-Environment=DEVICE=cuda
-ExecStart=/path/to/venv/bin/gunicorn main:app -c gunicorn.conf.py
-ExecReload=/bin/kill -s HUP $MAINPID
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-2. Enable and start the service:
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable guard-api
-sudo systemctl start guard-api
-sudo systemctl status guard-api
-```
-
-### Performance Considerations
-
-- **Workers**: Set to `2 * CPU_CORES + 1` for CPU-bound tasks
-- **Memory**: Each worker loads the AI models (~4-8GB per worker)
-- **GPU**: Use `DEVICE=cuda` only if GPU memory can handle multiple workers
-- **Timeout**: Increase for large model loading or complex analysis
-
-### Health Checks
-
-Gunicorn provides built-in health monitoring:
-```bash
-# Check if workers are responding
-curl http://localhost:8000/healthz
-
-# Monitor worker status
-ps aux | grep gunicorn
-
-# View logs
-tail -f /var/log/guard-api/access.log
-tail -f /var/log/guard-api/error.log
-```
-
-### Load Balancing
-
-For high-traffic deployments, use a reverse proxy:
-
-**Nginx configuration example:**
 ```nginx
 upstream guard_api {
     server 127.0.0.1:8000;
     server 127.0.0.1:8001;
-    server 127.0.0.1:8002;
 }
 
 server {
@@ -493,67 +331,292 @@ server {
         proxy_pass http://guard_api;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 120s;
     }
 }
 ```
 
-### Backend
+## 🛡️ Step 8: Security Best Practices
+
+### 8.1 API Key Management
+
 ```bash
-# Using gunicorn with multiple workers
-gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+# Generate secure API keys
+openssl rand -hex 32
+
+# Set environment variables
+export API_KEY="your-secure-production-key"
+export REACT_APP_API_KEY="your-secure-production-key"
 ```
 
-### Frontend
-```bash
-# Build for production
-npm run build
+### 8.2 CORS Configuration
 
-# Serve with nginx or similar
+```bash
+# Restrict CORS origins in production
+CORS_ORIGINS=["https://your-domain.com"]
 ```
 
-### Environment Variables
-- `API_KEY`: API authentication key for backend (default: `guard-api-key-2024`)
-- `REACT_APP_API_KEY`: API authentication key for frontend (should match API_KEY)
-- `REDIS_URL`: Redis connection string
-- `CORS_ORIGINS`: Allowed CORS origins
-- `LOG_LEVEL`: Logging level (INFO, DEBUG, etc.)
+### 8.3 Rate Limiting
 
-### API Authentication
+The system includes built-in rate limiting. Configure in `config.py`:
 
-The API now requires Bearer token authentication for all endpoints except:
-- `/docs` - API documentation
-- `/healthz` - Health check endpoint
-- `/` - Root endpoint
-
-**Setting up API Key:**
-1. Set `API_KEY` in your `.env` file for the backend
-2. Set `REACT_APP_API_KEY` in your `.env` file for the frontend (must match backend key)
-3. For external API calls, include the header: `Authorization: Bearer YOUR_API_KEY`
-
-**Example API Request:**
-```bash
-curl -H "Authorization: Bearer your-api-key-here" \
-     -H "Content-Type: application/json" \
-     http://localhost:8000/config
+```python
+RATE_LIMIT_REQUESTS = 100  # requests per minute
+RATE_LIMIT_WINDOW = 60     # window in seconds
 ```
 
-**Testing Authentication:**
+## 📊 Step 9: Monitoring and Troubleshooting
+
+### 9.1 Health Monitoring
+
 ```bash
-# Test the authentication system
-python test_auth.py
+# Check system health
+curl http://localhost:8000/healthz
+
+# Monitor logs
+docker logs -f <container_name>
+
+# Check Redis connectivity
+redis-cli ping
 ```
 
-## License
+### 9.2 Common Issues and Solutions
+
+**Issue: ModuleNotFoundError for advanced_metrics**
+```bash
+# Solution: Rebuild Docker image
+docker build -f Dockerfile.production -t tupaikapitalis/guard-api:latest .
+```
+
+**Issue: CUDA out of memory**
+```bash
+# Solution: Enable quantization
+USE_QUANTIZATION=true
+QUANTIZATION_BITS=4
+```
+
+**Issue: Model loading fails**
+```bash
+# Solution: Check Hugging Face token and model access
+export HUGGINGFACE_TOKEN="your-valid-token"
+```
+
+### 9.3 Performance Monitoring
+
+```python
+# Monitor key metrics
+import requests
+
+metrics = requests.get(
+    "http://localhost:8000/analytics/dashboard",
+    headers={"Authorization": "Bearer your-api-key"}
+).json()
+
+print(f"Response time: {metrics['avg_response_time']}ms")
+print(f"Cache hit rate: {metrics['cache_hit_rate']}%")
+print(f"Guard accuracy: {metrics['guard_accuracy']}%")
+```
+
+## 🚀 Step 10: Production Deployment
+
+### 10.1 Environment Preparation
+
+```bash
+# Set production environment variables
+export API_KEY="your-secure-production-key"
+export DEVICE="cuda"  # or "cpu"
+export USE_QUANTIZATION="true"
+export REDIS_URL="redis://your-redis-server:6379"
+```
+
+### 10.2 Deploy to Cloud
+
+**Using Docker Hub image:**
+```bash
+# Pull and run the latest image
+docker pull tupaikapitalis/guard-api:latest
+docker run -d \
+  --name guard-api \
+  -p 8000:8000 \
+  -e API_KEY="your-production-key" \
+  tupaikapitalis/guard-api:latest
+```
+
+**Using Docker Compose:**
+```bash
+# Deploy with production configuration
+docker-compose -f docker-compose.production.yml up -d
+```
+
+### 10.3 Systemd Service (Linux)
+
+Create `/etc/systemd/system/guard-api.service`:
+```ini
+[Unit]
+Description=Guard API Service
+After=network.target
+
+[Service]
+Type=exec
+User=www-data
+WorkingDirectory=/path/to/GUARD-SIMPLE
+Environment=API_KEY=your-production-key
+ExecStart=/usr/local/bin/gunicorn main:app -c gunicorn.conf.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable guard-api
+sudo systemctl start guard-api
+```
+
+## 📈 Understanding the Guards
+
+### Guard Types and Capabilities
+
+1. **LLaMA Guard 8B/1B**: Advanced safety classification
+   - Detects: Violence, sexual content, hate speech, cybercrime, PII
+   - Memory: 4-16GB (with quantization)
+   - Accuracy: Very High
+
+2. **IndoBERT Toxic Classifier**: Indonesian language toxicity
+   - Detects: Toxic language, hate speech
+   - Memory: <1GB
+   - Languages: Indonesian, English
+
+3. **LLM Guard**: Multi-validator scanner
+   - Detects: Prompt injection, PII, URLs, sensitive data
+   - Memory: <2GB
+   - Speed: Very Fast
+
+4. **NeMo Guardrails**: Policy-based filtering
+   - Detects: Policy violations, content categories
+   - Memory: <500MB
+   - Customizable: Yes
+
+### Decision Logic
+
+- **BLOCK**: If any guard returns "block"
+- **WARN**: If any guard returns "warn" (and none block)
+- **ALLOW**: If all guards return "allow"
+
+## 🔧 Customization and Extension
+
+### Adding Custom Guards
+
+1. Create a new guard class:
+```python
+class CustomGuard(BaseGuard):
+    def __init__(self):
+        super().__init__("custom_guard")
+    
+    async def analyze(self, prompt: str, **kwargs):
+        # Your custom logic here
+        return GuardResult(
+            verdict="allow",  # or "warn" or "block"
+            labels=["custom_category"],
+            score=0.5
+        )
+```
+
+2. Register in `GuardManager`:
+```python
+self.guards["custom_guard"] = CustomGuard()
+```
+
+### Custom Thresholds
+
+Adjust sensitivity in the Settings tab or via API:
+```python
+requests.put(
+    "http://localhost:8000/config",
+    headers=headers,
+    json={
+        "thresholds": {
+            "indobert_threshold": 0.8,  # Higher = more strict
+            "custom_threshold": 0.6
+        }
+    }
+)
+```
+
+## 📚 API Reference
+
+### Core Endpoints
+
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/healthz` | GET | Health check | No |
+| `/analyze` | POST | Analyze prompt | Yes |
+| `/config` | GET/PUT | Configuration | Yes |
+| `/metrics` | GET | System metrics | Yes |
+| `/analytics/*` | GET | Advanced analytics | Yes |
+
+### Response Formats
+
+**Analyze Response:**
+```json
+{
+  "final": "allow|warn|block",
+  "per_guard": {
+    "guard_name": {
+      "verdict": "allow|warn|block",
+      "labels": ["category1", "category2"],
+      "score": 0.85,
+      "latency_ms": 150
+    }
+  },
+  "policy": {
+    "rule": "block if any block; warn if any warn; else allow"
+  },
+  "metadata": {
+    "total_latency_ms": 200,
+    "cache_hit": false,
+    "timestamp": "2024-01-01T12:00:00Z"
+  }
+}
+```
+
+## 🎓 Next Steps
+
+Congratulations! You've successfully deployed the GUARD-SIMPLE API. Here are some next steps:
+
+1. **Integrate with your application**: Use the API endpoints to screen prompts
+2. **Monitor performance**: Use the dashboard to track metrics and optimize
+3. **Customize guards**: Add your own safety rules and thresholds
+4. **Scale deployment**: Use load balancing and multiple instances
+5. **Enhance security**: Implement additional authentication and monitoring
+
+## 🆘 Support and Troubleshooting
+
+### Getting Help
+
+1. **Check logs**: `docker logs <container_name>`
+2. **API documentation**: http://localhost:8000/docs
+3. **Health status**: http://localhost:8000/healthz
+4. **Test authentication**: Use the provided curl examples
+
+### Common Solutions
+
+- **Memory issues**: Enable quantization with `USE_QUANTIZATION=true`
+- **Slow performance**: Use GPU with `DEVICE=cuda`
+- **Connection errors**: Check Redis server status
+- **Authentication errors**: Verify API key matches in both backend and frontend
+
+### Performance Optimization
+
+- **Memory**: Use 4-bit quantization for 75% reduction
+- **Speed**: Enable GPU acceleration when available
+- **Caching**: Redis caching reduces duplicate analysis
+- **Load balancing**: Use multiple workers for high traffic
+
+## 📄 License
 
 MIT License - see LICENSE file for details.
 
-## Support
+---
 
-For issues and questions:
-1. Check the API documentation at `/docs`
-2. Review logs for error details
-3. Monitor health status at `/healthz`
-4. Check Redis connectivity and guard status
+**🎉 You're all set!** Your GUARD-SIMPLE API is now ready to protect your LLM applications from unsafe prompts. Visit the dashboard at http://localhost:3000 to start testing and monitoring your deployment.
